@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 //
-// File Name:    CanSeeTarget.h
+// File Name:    EnemyTargetPoint.h
 // Author(s):    Hyungseob Kim (hyungseob.kim)
 // Project:      The Man
 // Course:       GAM300
@@ -12,16 +12,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BehaviorTree/BTService.h"
-#include "CanSeeTarget.generated.h"
+#include "Engine/TargetPoint.h"
+#include "EnemyTargetPoint.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class GRIMGRIN_API UCanSeeTarget : public UBTService
+class GRIMGRIN_API AEnemyTargetPoint : public ATargetPoint
 {
 	GENERATED_BODY()
 
-	virtual void TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BeastAI")
+	float WaitingTime = 0.f;
 };

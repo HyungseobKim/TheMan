@@ -5,7 +5,7 @@
 // Project:      The Man
 // Course:       GAM300
 //
-// Copyright © 2020 DigiPen (USA) Corporation, all rights reserved.
+// Copyright ?2020 DigiPen (USA) Corporation, all rights reserved.
 //
 //------------------------------------------------------------------------------
 

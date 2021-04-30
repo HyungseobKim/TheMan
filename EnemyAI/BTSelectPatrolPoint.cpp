@@ -5,7 +5,7 @@
 // Project:      The Man
 // Course:       GAM300
 //
-// Copyright © 2020 DigiPen (USA) Corporation, all rights reserved.
+// Copyright ?2020 DigiPen (USA) Corporation, all rights reserved.
 //
 //------------------------------------------------------------------------------
 
@@ -40,6 +40,7 @@ EBTNodeResult::Type UBTSelectPatrolPoint::ExecuteTask(UBehaviorTreeComponent& Ow
 		}
 
 		BlackboardComp->SetValueAsObject("LocationToGo", NextPatrolPoint);
+		BlackboardComp->SetValueAsFloat("WaitingTime", NextPatrolPoint->WaitingTime);
 		return EBTNodeResult::Succeeded;
 	}
 

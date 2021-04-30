@@ -5,11 +5,16 @@
 // Project:      The Man
 // Course:       GAM300
 //
-// Copyright © 2020 DigiPen (USA) Corporation, all rights reserved.
+// Copyright ?2020 DigiPen (USA) Corporation, all rights reserved.
 //
 //------------------------------------------------------------------------------
 
 #pragma once
+
+#include <limits>
+
+#include "Components/SpotLightComponent.h"
+#include "PlayerTrace.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -30,10 +35,30 @@ public:
 	/*UFUNCTION()
 	void OnComponentHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);*/
 
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	void SetPlayerSeen(AActor* InActor);
+
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	
+	UFUNCTION()
+	void OnHearNoise(APawn* PawnInstigator, const FVector& Location, float Volume);
 
 	void SetBaseMaterial();
+
+	void SpawnPlayerTrace(APawn* player);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "BeastEvent")
+	void SeeingPlayerEvent();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "BeastEvent")
+	void CantSeePlayerEvent();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "BeastEvent")
+	void CaughtPlayer();
+
+	UFUNCTION(BlueprintCallable, Category = Eyes)
+	void InitializeTimer();
 
 protected:
 	// Called when the game starts or when spawned
@@ -52,16 +77,37 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = AI)
 	class USphereComponent* SphereComponent;
 
-	UPROPERTY(EditAnywhere, Category = Eyes)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AI)
+	float ChasingTime = 2.f;
+
+	/*UPROPERTY(EditAnywhere, Category = Eyes)
 	class UMaterial* BaseMaterial;
 
 	UPROPERTY(EditAnywhere, Category = Eyes)
-	class UMaterial* SeeingMaterial;
+	class UMaterial* SeeingMaterial;*/
+
+	UPROPERTY(EditAnywhere, Category = Eyes)
+	FLinearColor EyeLightColorDefault;
+
+	UPROPERTY(EditAnywhere, Category = Eyes)
+	FLinearColor EyeLightColorSeen;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Eyes)
+	float ColorChangingTime = 2.f;
 
 private:
 	UFUNCTION()
 	void OnPlayerSeen(APawn* InPawn);
 
-	UStaticMeshComponent* LeftEye;
-	UStaticMeshComponent* RightEye;
+	/*UStaticMeshComponent* LeftEye;
+	UStaticMeshComponent* RightEye;*/
+
+	USpotLightComponent* EyeLight;
+
+	UPROPERTY(EditDefaultsOnly, Category = AI)
+	TSubclassOf<APlayerTrace> PlayerTraceBP;
+
+	APlayerTrace* playerTrace = nullptr;
+
+	float EyeColorTimer = std::numeric_limits<float>::max();
 };

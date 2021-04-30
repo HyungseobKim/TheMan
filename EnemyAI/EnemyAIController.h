@@ -5,7 +5,7 @@
 // Project:      The Man
 // Course:       GAM300
 //
-// Copyright © 2020 DigiPen (USA) Corporation, all rights reserved.
+// Copyright ?2020 DigiPen (USA) Corporation, all rights reserved.
 //
 //------------------------------------------------------------------------------
 
@@ -36,6 +36,15 @@ class GRIMGRIN_API AEnemyAIController : public AAIController
 	UPROPERTY(EditDefaultsOnly, Category = AI)
 	FName LocationKey;
 
+	UPROPERTY(EditDefaultsOnly, Category = AI)
+	FName TraceKey;
+
+	UPROPERTY(EditDefaultsOnly, Category = AI)
+	FName ChasingTimerKey;
+
+	float ChasingTime;
+	bool JustLosePlayer = false;
+
 	TArray<AActor*> PatrolPoints;
 
 	virtual void OnPossess(APawn* InPawn) override;
@@ -46,9 +55,22 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void SetPlayerSeen(APawn* InPawn);
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	void SetPlayerSeen(AActor* InActor);
+
+	void SetPlayerHeard(AActor* InActor);
+
 	void SetPlayerNotSeen();
+	void SetLosePlayer();
+	void ClearTrace();
+	void Rotate(float amount);
+
 	void OnEnemyHit(AActor* OtherActor);
+
+	void StartBehave();
+
+	void SetChasingTime(float time);
+	
 
 	// Inline getter methods
 	FORCEINLINE UBlackboardComponent* GetBlackboardComp() const { return BlackboardComp; }

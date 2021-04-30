@@ -5,7 +5,7 @@
 // Project:      The Man
 // Course:       GAM300
 //
-// Copyright © 2020 DigiPen (USA) Corporation, all rights reserved.
+// Copyright ?2020 DigiPen (USA) Corporation, all rights reserved.
 //
 //------------------------------------------------------------------------------
 
@@ -15,9 +15,12 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Engine/TriggerBox.h"
 
 #include "EnemyCharacter.h"
 #include "EnemyTargetPoint.h"
+
+#include "BeastTriggerBox.h"
 
 #include "Spawnpoint.h"
 
@@ -34,12 +37,33 @@ AEnemyAIController::AEnemyAIController()
 
 	PlayerKey = "Target";
 	LocationKey = "LocationToGo";
+	TraceKey = "Trace";
+	ChasingTimerKey = "ChasingTimer";
+}
+
+// Will be called in AEnemyCharacter::BeginPlay()
+void AEnemyAIController::SetChasingTime(float time)
+{
+	ChasingTime = time;
+	BlackboardComp->SetValueAsFloat(ChasingTimerKey, 0.f);
 }
 
 // Called every frame
 void AEnemyAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (JustLosePlayer == true)
+	{
+		float ChasingTimer = BlackboardComp->GetValueAsFloat(ChasingTimerKey);
+		if (ChasingTimer > 0.f)
+			BlackboardComp->SetValueAsFloat(ChasingTimerKey, ChasingTimer - DeltaTime);
+		else
+		{
+			JustLosePlayer = false;
+			SetLosePlayer();
+		}
+	}
 }
 
 void AEnemyAIController::OnPossess(APawn* InPawn)
@@ -55,29 +79,85 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEnemyTargetPoint::StaticClass(), PatrolPoints);
 		BlackboardComp->SetValueAsObject(LocationKey, Cast<AEnemyTargetPoint>(PatrolPoints[0]));
 
-		BehaviorComp->StartTree(*EnemyCharacter->BehaviorTree);
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABeastTriggerBox::StaticClass(), FoundActors);
+
+		if (FoundActors.Num() == 0)
+			StartBehave();
+		else
+		{
+			for (auto box : FoundActors)
+				Cast<ABeastTriggerBox>(box)->Beast = this;
+		}
 	}
 }
 
-void AEnemyAIController::SetPlayerSeen(APawn* InPawn)
+void AEnemyAIController::StartBehave()
 {
+	AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(GetCharacter());
+	BehaviorComp->StartTree(*EnemyCharacter->BehaviorTree);
+}
+
+void AEnemyAIController::SetPlayerSeen(AActor* InActor)
+{
+	JustLosePlayer = false;
+
 	if (BlackboardComp)
 	{
-		BlackboardComp->SetValueAsObject(PlayerKey, InPawn);
+		BlackboardComp->SetValueAsObject(PlayerKey, InActor);
+		BlackboardComp->SetValueAsVector(TraceKey, InActor->GetActorLocation());
+		BlackboardComp->SetValueAsFloat(ChasingTimerKey, 0.0f);
 	}
+}
+
+void AEnemyAIController::SetPlayerHeard(AActor* InActor)
+{
+	if (BlackboardComp)
+		BlackboardComp->SetValueAsVector(TraceKey, InActor->GetActorLocation());
 }
 
 void AEnemyAIController::SetPlayerNotSeen()
 {
+	// It already lost player
+	if (JustLosePlayer == true || BlackboardComp->GetValueAsFloat(ChasingTimerKey) > 0.0f)
+		return;
+
+	JustLosePlayer = true;
+	BlackboardComp->SetValueAsFloat(ChasingTimerKey, ChasingTime);
+}
+
+void AEnemyAIController::SetLosePlayer()
+{
 	AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(GetCharacter());
 	if (!EnemyCharacter) return;
 
+	// Must be before clear player key.
+	//EnemyCharacter->SpawnPlayerTrace(Cast<APawn>(BlackboardComp->GetValueAsObject(PlayerKey)));
 	BlackboardComp->ClearValue(PlayerKey);
 
-	int32 closestPoint = FindClosestPoint(EnemyCharacter->GetActorLocation());
-	BlackboardComp->SetValueAsObject(LocationKey, PatrolPoints[closestPoint]);
+	AEnemyTargetPoint* closestPoint = Cast<AEnemyTargetPoint>(PatrolPoints[FindClosestPoint(EnemyCharacter->GetActorLocation())]);
+	BlackboardComp->SetValueAsObject(LocationKey, closestPoint);
+	BlackboardComp->SetValueAsFloat("WaitingTime", closestPoint->WaitingTime);
 
 	EnemyCharacter->SetBaseMaterial();
+}
+
+void AEnemyAIController::ClearTrace()
+{
+	BlackboardComp->ClearValue(TraceKey);
+}
+
+void AEnemyAIController::Rotate(float amount)
+{
+	AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(GetCharacter());
+
+	if (EnemyCharacter)
+	{
+		FRotator NewRotation = EnemyCharacter->GetActorRotation();
+		NewRotation.Yaw += amount;
+
+		EnemyCharacter->SetActorRotation(NewRotation);
+	}
 }
 
 void AEnemyAIController::OnEnemyHit(AActor* OtherActor)
@@ -89,7 +169,10 @@ void AEnemyAIController::OnEnemyHit(AActor* OtherActor)
 		//printFString("OtherActor: %s", *OtherActor->GetName());
 		//print("You have been caught!");
 
-		((USpawnpoint*)(((APlayerController*)Player)->GetComponentByClass(USpawnpoint::StaticClass())))->Respawn();
+		AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(GetCharacter());
+		EnemyCharacter->CaughtPlayer(); //Unreal event
+
+		((USpawnpoint*)(((APlayerController*)Player)->GetComponentByClass(USpawnpoint::StaticClass())))->BlackFadeRespawn(1.0f);
 	}
 }
 
