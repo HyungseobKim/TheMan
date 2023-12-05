@@ -1,23 +1,24 @@
 Enemy AI implementation using Unreal Behavior Tree feature.
 
 EnemyCharacter.h, EnemyCharacter.cpp
-Character class for enemy. Contains behavior tree, blackboard and other components.
+- Character class for enemy. Contains behavior tree, blackboard and other components.
 
 EnemyAIController.h, EnemyAIController.cpp
-Definition of some methods about actions that enemy can take.
-When player seen, chase player. When player collides, send player to spawn point.
-If cannot see the player, go find closest patrol point.
+- Definition of some methods about actions that the enemy can take.
+- When the enemy sees the player, it chases the player.
+- When the player collides with the enemy, the player will be sent to the restart point.
+- If the enemy cannot see the player, go back to the closest patrol point.
 
 BTSelectPatrolPoint.h, BTSelectPatrolPoint.cpp
-Behavior Tree node which choose next patrol point.
+- Behavior Tree node which choose next patrol point.
 
 CanSeeTarget.h, CanSeeTarget.cpp
-Unreal behavior tree service which check whether can see player or not.
-If cannot, call FindClosestPoint function.
+- Unreal behavior tree service which checks whether the enemy can see the player or not.
+- If the player has not seen, it calls FindClosestPoint function.
 
 BTRotateToFindPlayer.h, BTRotateToFindPlayer.cpp
-When it loses player or hear noise, it goes the place where event occurs lastly, and turn around to find player.
+- When the loses the player or hears a noise, it goes to the place where the event occurs lastly, and turns around once to find player.
 
 BTClearTrace.h, BTClearTrace.cpp, PlayerTrace.h, PlayerTrace.cpp
-Used for showing place where enemy is going.
-It appears where enemy saw player lastly.
+- It shows the place where the enemy is going.
+- It is placed at the player's position when the enemy detected the player last time.
